@@ -11,7 +11,7 @@ namespace AgentBackend
         {            
             Console.WriteLine($"✅ Received payload: {payloadJson}");
 
-            await Clients.All.SendAsync("Recievec Scan Update", payloadJson);
+            await Clients.All.SendAsync("Receive Scan Update", payloadJson);
         }
     }
 }

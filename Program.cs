@@ -1,20 +1,28 @@
-using AgentBackend;
+﻿using AgentBackend;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddSignalR();
+// Add services
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ✅ Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular",
+        policy => policy
+            .WithOrigins("http://localhost:4200")  // Angular dev server
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
+
 var app = builder.Build();
 
-
-
-
-// Configure the HTTP request pipeline.
+// Configure pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -23,23 +31,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
+// ✅ Must come between UseRouting and MapHub
+app.UseCors("AllowAngular");
+
 app.UseAuthorization();
 
-app.UseRouting();
-app.UseCors(builder =>
-{
-    builder
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .SetIsOriginAllowed(_ => true)
-        .AllowCredentials();
-});
-
-app.UseEndpoints(endpoints => {
-    endpoints.MapHub<AgentHub>("/agentHub");
-});
-
+// ✅ Enable WebSockets before mapping hubs
 app.UseWebSockets();
+
+// ✅ Map hub and controllers
 app.MapControllers();
+app.MapHub<AgentHub>("/agenthub");  // make sure path matches frontend
 
 app.Run();
